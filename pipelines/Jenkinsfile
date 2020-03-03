@@ -30,7 +30,7 @@
                       // Wait for application to be deployed
                       def dc = openshift.selector("dc", "simple-webapp-flask").object()
                       while (dc.spec.replicas != dc.status.availableReplicas) {
-                        sleep 1
+                        sleep 10
                       }
                     }
                   }
@@ -70,7 +70,7 @@
                       // Wait for application to be deployed
                       def dc = openshift.selector("dc", "simple-webapp-flask").object()
                       while (dc.spec.replicas != dc.status.availableReplicas) {
-                        sleep 1
+                        sleep 10
                       }
                       // curl the testProject route to get simple
                       // sh 'curl http://simple-webapp-flask-cicd-test.apps.shared-ocp4.dev4.openshift.opentlc.com/ | grep simple -q'
@@ -96,7 +96,7 @@
                       echo '*** Deploying to Production ***'
                       def dc = openshift.selector("dc", "simple-webapp-flask").object()
                       while (dc.spec.replicas != dc.status.availableReplicas) {
-                        sleep 1
+                        sleep 10
                       }
                       // openshiftVerifyDeployment apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-prod', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'false', waitTime: '10'
                       sleep 10
