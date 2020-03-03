@@ -1,4 +1,3 @@
-      jenkinsfile: |
         // Set project names
         def devProj    = "cicd-dev"
         def testProj   = "cicd-test"
