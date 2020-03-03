@@ -1,0 +1,115 @@
+      jenkinsfile: |
+        // Set project names
+        def devProj    = "cicd-dev"
+        def testProj   = "cicd-test"
+        def prodProj   = "cicd-prod"
+        def svc_name   = "simple-webapp-flask"
+        pipeline {
+          agent any
+          stages{
+            stage("Build"){
+              steps{
+                echo '*** Build Starting ***'
+                script{
+                  openshift.withCluster() {
+                    openshift.withProject("${devProj}") {
+                      openshift.selector('bc', 'simple-webapp-flask').startBuild("--wait").logs('-f')
+                    }
+                  }
+                echo '*** Build Complete ***'
+                }
+              }
+            }
+            stage ("Deploy and Verify in Development Env") {
+              steps{
+                echo '*** Deployment Starting ***'
+                script{
+                  openshift.withCluster() {
+                    openshift.withProject("${devProj}") {
+                      // Deploy the cotd application in the devProject
+                      openshift.selector('dc', 'simple-webapp-flask').rollout().latest();
+                      // Wait for application to be deployed
+                      def dc = openshift.selector("dc", "simple-webapp-flask").object()
+                      while (dc.spec.replicas != dc.status.availableReplicas) {
+                        sleep 1
+                      }
+                    }
+                  }
+                }
+                echo '*** Deployment Complete ***'
+                echo '*** Service Verification Starting ***'
+                script{
+                  openshift.withCluster() {
+                    openshift.withProject("${devProj}") {
+                      // def svc = openshift.selector("svc", "simple-webapp-flask")
+                      // openshiftVerifyService apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', namespace: 'cicd-dev', svcName: 'simple-webapp-flask', verbose: 'false'
+                      def connected = openshift.verifyService("${svc_name}")
+                      if (connected) {
+                        echo "Able to connect to ${svc_name}"
+                      } else {
+                        echo "Unable to connect to ${svc_name}"
+                      }
+
+                      // openshiftTag(srcStream: 'simple-webapp-flask', srcTag: 'latest', destStream: 'simple-webapp-flask', destTag: 'testready')
+                      openshift.tag("${devProj}/simple-webapp-flask:latest", "${devProj}/simple-webapp-flask:testready")
+                    }
+                  }
+                }
+                echo '*** Service Verification Complete ***'
+              }
+            }
+            stage ('Deploy and Test in Testing Env') {
+              steps{
+                echo "*** Deploy testready build in cicd-test project  ***"
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject("${testProj}") {
+                      // openshiftDeploy apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-test', verbose: 'false', waitTime: ''
+                      // openshiftVerifyDeployment apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-test', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'false', waitTime: '10'
+                      // Deploy the cotd application in the testProject
+                      openshift.selector('dc', 'simple-webapp-flask').rollout().latest();
+                      // Wait for application to be deployed
+                      def dc = openshift.selector("dc", "simple-webapp-flask").object()
+                      while (dc.spec.replicas != dc.status.availableReplicas) {
+                        sleep 1
+                      }
+                      // curl the testProject route to get simple
+                      // sh 'curl http://simple-webapp-flask-cicd-test.apps.shared-ocp4.dev4.openshift.opentlc.com/ | grep simple -q'
+                      def route = openshift.selector("route", "simple-webapp-flask").object()
+                      def the_route = "${route.spec.host}"
+                      echo "route: ${the_route}"
+                      //sh "curl -s http://${the_route} | grep -q simple"
+                    }
+                  }
+                }
+              }
+            }
+            stage ('Promote and Verify in Production Env') {
+              steps{
+                echo '*** Waiting for Input ***'
+                script{
+                  openshift.withCluster() {
+                    openshift.withProject("${prodProj}") {
+                      input message: 'Should we deploy to Production?', ok: "Promote"
+                      // openshiftTag(srcStream: 'simple-webapp-flask', srcTag: 'testready', destStream: 'simple-webapp-flask', destTag: 'prodready')
+                      openshift.tag("${devProj}/simple-webapp-flask:testready", "${devProj}/simple-webapp-flask:prodready")
+                      // openshiftDeploy apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-prod', verbose: 'false', waitTime: ''
+                      echo '*** Deploying to Production ***'
+                      def dc = openshift.selector("dc", "simple-webapp-flask").object()
+                      while (dc.spec.replicas != dc.status.availableReplicas) {
+                        sleep 1
+                      }
+                      // openshiftVerifyDeployment apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-prod', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'false', waitTime: '10'
+                      sleep 10
+                      // test route
+                      def route = openshift.selector("route", "simple-webapp-flask").object()
+                      def the_route = "${route.spec.host}"
+                      echo "route: ${the_route}"
+                      //sh "curl -s http://${the_route} | grep -q simple"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
