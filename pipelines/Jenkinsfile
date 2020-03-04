@@ -91,7 +91,7 @@
                     openshift.withProject("${prodProj}") {
                       input (message: 'Should we deploy to Production?', ok: "Promote",
                              parameters: [booleanParam(defaultValue: true, 
-                        description: 'If you click "Promote" the build will proceed to the next step, if you click "Abort" the build will be aborted.')])
+                             description: 'If you click "Promote" the build will proceed to the next step, if you click "Abort" the build will be aborted.',name: 'Promote')])
                       // openshiftTag(srcStream: 'simple-webapp-flask', srcTag: 'testready', destStream: 'simple-webapp-flask', destTag: 'prodready')
                       openshift.tag("${devProj}/simple-webapp-flask:testready", "${devProj}/simple-webapp-flask:prodready")
                       // openshiftDeploy apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-prod', verbose: 'false', waitTime: ''
