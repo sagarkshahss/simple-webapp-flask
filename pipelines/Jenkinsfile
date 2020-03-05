@@ -27,7 +27,6 @@
                     openshift.withProject("${devProj}") {
                       // Deploy the cotd application in the devProject
                       openshift.selector('dc', 'simple-webapp-flask').rollout().latest();
-                      sleep 10      
                       // Wait for application to be deployed
                       def dc = openshift.selector("dc", "simple-webapp-flask").object()
                       while (dc.spec.replicas != dc.status.availableReplicas) {
@@ -68,7 +67,6 @@
                       // openshiftVerifyDeployment apiURL: 'https://openshift.default.svc.cluster.local', authToken: '', depCfg: 'simple-webapp-flask', namespace: 'cicd-test', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'false', waitTime: '10'
                       // Deploy the cotd application in the testProject
                       openshift.selector('dc', 'simple-webapp-flask').rollout().latest();
-                      sleep 10      
                       // Wait for application to be deployed
                       def dc = openshift.selector("dc", "simple-webapp-flask").object()
                       while (dc.spec.replicas != dc.status.availableReplicas) {
@@ -84,7 +82,7 @@
                   }
                 }
               }
-            }    
+            }
             stage ('Promote and Verify in Production Env') {
               steps{
                 echo '*** Waiting for Input ***'
