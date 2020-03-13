@@ -38,3 +38,8 @@ Open a browser and go to URL
 
     http://<IP>:5000                            => Welcome
     http://<IP>:5000/how%20are%20you            => I am good, how about you?
+    
+## 5. Interesting Video for deep dive
+Why Flask:  https://medium.com/bhavaniravi/build-your-1st-python-web-app-with-flask-b039d11f101c
+How Flask : https://www.youtube.com/watch?v=QjtW-wnXlUY
+    
